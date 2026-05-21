@@ -103,6 +103,42 @@ export const dbService = {
     }
   },
 
+  async getUserProfileByEmail(email: string): Promise<User | null> {
+    const cleanEmail = email.trim().toLowerCase();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+        if (error) {
+          console.error('Supabase getUserProfileByEmail error:', error);
+          throw error;
+        }
+        if (!data) return null;
+        return {
+          uid: data.uid,
+          fullName: data.full_name,
+          icPassport: data.ic_passport,
+          phone: data.phone,
+          email: data.email,
+          age: data.age,
+          gender: data.gender,
+          isFirstTime: data.is_first_time,
+          createdAt: data.created_at,
+        };
+      } catch (err) {
+        console.error('Supabase query exception, falling back to local storage:', err);
+        const users = getLocalData<User>('hums_users');
+        return users.find(u => u.email?.trim().toLowerCase() === cleanEmail) || null;
+      }
+    } else {
+      const users = getLocalData<User>('hums_users');
+      return users.find(u => u.email?.trim().toLowerCase() === cleanEmail) || null;
+    }
+  },
+
   // Appointments
   async saveAppointment(appt: Appointment): Promise<void> {
     if (supabase) {

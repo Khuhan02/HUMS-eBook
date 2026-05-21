@@ -145,8 +145,32 @@ export default function App() {
         setDbUser(userProfile);
         setCurrentView('welcome');
       } else {
-        // Auto-seed profile for demo patient to save clicking time
-        const initialProfile: User = {
+        // Only auto-seed a mock profile if it's the standard quick demo button
+        if (demoUser.uid === 'hums_demo_patient_101') {
+          const initialProfile: User = {
+            uid: demoUser.uid,
+            fullName: demoUser.displayName,
+            icPassport: "900101-12-3456",
+            phone: "+60123456789",
+            email: demoUser.email,
+            age: 32,
+            gender: 'male',
+            isFirstTime: true,
+            createdAt: new Date().toISOString()
+          };
+          await dbService.saveUserProfile(initialProfile);
+          setDbUser(initialProfile);
+          setCurrentView('welcome');
+        } else {
+          // Send dynamic custom users to fill out their actual registration details
+          setDbUser(null);
+          setCurrentView('firstTimeRegister');
+        }
+      }
+    } catch (err: any) {
+      if (demoUser.uid === 'hums_demo_patient_101') {
+        // Fall back to memory for the quick demo
+        const demoProfile: User = {
           uid: demoUser.uid,
           fullName: demoUser.displayName,
           icPassport: "900101-12-3456",
@@ -157,25 +181,12 @@ export default function App() {
           isFirstTime: true,
           createdAt: new Date().toISOString()
         };
-        await dbService.saveUserProfile(initialProfile);
-        setDbUser(initialProfile);
+        setDbUser(demoProfile);
         setCurrentView('welcome');
+      } else {
+        setDbUser(null);
+        setCurrentView('firstTimeRegister');
       }
-    } catch (err: any) {
-      // Fall back to memory
-      const demoProfile: User = {
-        uid: demoUser.uid,
-        fullName: demoUser.displayName,
-        icPassport: "900101-12-3456",
-        phone: "+60123456789",
-        email: demoUser.email,
-        age: 32,
-        gender: 'male',
-        isFirstTime: true,
-        createdAt: new Date().toISOString()
-      };
-      setDbUser(demoProfile);
-      setCurrentView('welcome');
     } finally {
       setLoading(false);
     }
@@ -193,6 +204,17 @@ export default function App() {
     setActiveQueue(null);
     setCurrentView('welcome');
     setActiveTab('home');
+  };
+
+  // Update Patient Profile database record
+  const handleUpdateProfile = async (updatedUser: User) => {
+    try {
+      await dbService.saveUserProfile(updatedUser);
+      setDbUser(updatedUser);
+    } catch (err: any) {
+      console.error("Failed to update profile record:", err);
+      throw new Error(err?.message || "Could not register update with server.");
+    }
   };
 
   // Submit Patient Registration Form (Step 1)
@@ -588,11 +610,43 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'profile' && dbUser && (
-          <ProfileScreen
-            user={dbUser}
-            onLogout={handleLogout}
-          />
+        {activeTab === 'profile' && (
+          dbUser ? (
+            <ProfileScreen
+              user={dbUser}
+              onLogout={handleLogout}
+              onUpdateProfile={handleUpdateProfile}
+            />
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+                <UserIcon size={30} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-bold text-slate-800 text-lg">Identity Registration Requested</h3>
+                <p className="text-slate-500 text-xs leading-relaxed max-w-sm mx-auto">
+                  To view and protect your electronic patient card, please complete the official clinical registration form with your MyKad/Passport details.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveTab('home');
+                  setCurrentView('firstTimeRegister');
+                }}
+                className="bg-blue-600 text-white font-bold text-xs px-6 py-3 rounded-xl hover:bg-blue-700 transition active:scale-95 cursor-pointer shadow-xs"
+              >
+                Complete Patient Profile
+              </button>
+              <div className="pt-2">
+                <button 
+                  onClick={handleLogout} 
+                  className="text-xs text-red-500 font-bold hover:underline"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )
         )}
       </main>
 
