@@ -95,7 +95,14 @@ export default function LoginScreen({ onBypassLogin }: LoginScreenProps) {
         })
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonErr) {
+        throw new Error(`Server returned a non-JSON response (${response.status} ${response.statusText || 'Error'}). If you are testing, please try again or restart the dev server.`);
+      }
+
       if (!response.ok) {
         throw new Error(data.error || "Could not dispatch verification code");
       }
@@ -133,7 +140,14 @@ export default function LoginScreen({ onBypassLogin }: LoginScreenProps) {
         })
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonErr) {
+        throw new Error(`Server returned a non-JSON verification response (${response.status} ${response.statusText || 'Error'}).`);
+      }
+
       if (!response.ok) {
         throw new Error(data.error || "Incorrect OTP code. Please check code or try again.");
       }
