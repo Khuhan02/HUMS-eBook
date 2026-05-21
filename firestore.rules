@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity validation helpers
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'fullName', 'icPassport', 'phone', 'email', 'age', 'gender', 'createdAt'])
+        && data.uid == request.auth.uid
+        && data.fullName is string && data.fullName.size() <= 200
+        && data.icPassport is string && data.icPassport.size() <= 100
+        && data.phone is string && data.phone.size() <= 30
+        && data.email is string && data.email.size() <= 200
+        && data.age is int && data.age >= 0 && data.age <= 150
+        && (data.gender == 'male' || data.gender == 'female' || data.gender == 'other');
+    }
+
+    function isValidAppointment(data) {
+      return data.keys().hasAll(['appointmentId', 'userId', 'appointmentType', 'department', 'doctorName', 'appointmentDate', 'status', 'createdAt'])
+        && data.userId == request.auth.uid
+        && (data.appointmentType == 'firstTime' || data.appointmentType == 'followUp')
+        && data.department is string && data.department.size() <= 200
+        && data.doctorName is string && data.doctorName.size() <= 200
+        && (data.status == 'pending' || data.status == 'confirmed' || data.status == 'completed');
+    }
+
+    function isValidQueue(data) {
+      return data.keys().hasAll(['queueId', 'appointmentId', 'queueNumber', 'estimatedWait', 'patientsAhead', 'roomNumber', 'floorNumber', 'queueStatus', 'updatedAt'])
+        && data.queueNumber is string && data.queueNumber.size() <= 20
+        && data.estimatedWait is int && data.estimatedWait >= 0
+        && data.patientsAhead is int && data.patientsAhead >= 0
+        && (data.queueStatus == 'waiting' || data.queueStatus == 'ready' || data.queueStatus == 'completed');
+    }
+
+    function isValidFollowUp(data) {
+      return data.keys().hasAll(['followUpId', 'userId', 'previousDiagnosis', 'doctorName', 'appointmentDate', 'department', 'attendanceConfirmed'])
+        && data.userId == request.auth.uid;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['notificationId', 'userId', 'title', 'message', 'type', 'isRead', 'sentAt'])
+        && data.userId == request.auth.uid;
+    }
+
+    // Match blocks
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'phone', 'email', 'age', 'gender', 'isFirstTime']);
+    }
+
+    match /appointments/{appointmentId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidAppointment(request.resource.data);
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid && isValidAppointment(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'symptomId', 'department', 'doctorName']);
+    }
+
+    match /symptoms/{symptomId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Clinicians load symptoms, read-only for clients
+    }
+
+    match /queue/{queueId} {
+      allow read: if isSignedIn(); // Let any patient view general live queue state or their own status
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isValidQueue(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['queueStatus', 'updatedAt', 'patientsAhead', 'estimatedWait']);
+    }
+
+    match /followups/{followUpId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidFollowUp(request.resource.data);
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendanceConfirmed']);
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidNotification(request.resource.data);
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+    }
+  }
+}

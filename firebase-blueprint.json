@@ -1,0 +1,124 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Patient user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "fullName": { "type": "string" },
+        "icPassport": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "age": { "type": "integer" },
+        "gender": { "type": "string", "enum": ["male", "female", "other"] },
+        "isFirstTime": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "fullName", "icPassport", "phone", "email", "age", "gender", "createdAt"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Clinical appointment entry",
+      "type": "object",
+      "properties": {
+        "appointmentId": { "type": "string" },
+        "userId": { "type": "string" },
+        "appointmentType": { "type": "string", "enum": ["firstTime", "followUp"] },
+        "department": { "type": "string" },
+        "symptomId": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "appointmentDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["appointmentId", "userId", "appointmentType", "department", "doctorName", "appointmentDate", "status", "createdAt"]
+    },
+    "Symptom": {
+      "title": "Symptom",
+      "description": "Healthcare symptoms data",
+      "type": "object",
+      "properties": {
+        "symptomId": { "type": "string" },
+        "name": { "type": "string" },
+        "icon": { "type": "string" },
+        "category": { "type": "string" },
+        "averageWaitTime": { "type": "integer" }
+      },
+      "required": ["symptomId", "name", "icon", "averageWaitTime"]
+    },
+    "Queue": {
+      "title": "Queue",
+      "description": "Virtual queue entry representing live status",
+      "type": "object",
+      "properties": {
+        "queueId": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "queueNumber": { "type": "string" },
+        "estimatedWait": { "type": "integer" },
+        "patientsAhead": { "type": "integer" },
+        "roomNumber": { "type": "string" },
+        "floorNumber": { "type": "integer" },
+        "queueStatus": { "type": "string", "enum": ["waiting", "ready", "completed"] },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["queueId", "appointmentId", "queueNumber", "estimatedWait", "patientsAhead", "roomNumber", "floorNumber", "queueStatus", "updatedAt"]
+    },
+    "FollowUp": {
+      "title": "FollowUp",
+      "description": "Details for standard follow up appointments",
+      "type": "object",
+      "properties": {
+        "followUpId": { "type": "string" },
+        "userId": { "type": "string" },
+        "previousDiagnosis": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "appointmentDate": { "type": "string", "format": "date" },
+        "department": { "type": "string" },
+        "attendanceConfirmed": { "type": "boolean" }
+      },
+      "required": ["followUpId", "userId", "previousDiagnosis", "doctorName", "appointmentDate", "department", "attendanceConfirmed"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Patient alerts and queue update log",
+      "type": "object",
+      "properties": {
+        "notificationId": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["queue", "appointment"] },
+        "isRead": { "type": "boolean" },
+        "sentAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["notificationId", "userId", "title", "message", "type", "isRead", "sentAt"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles collection indexed by UID"
+    },
+    "appointments": {
+      "schema": { "$ref": "#/entities/Appointment" },
+      "description": "Booking appointments of patients"
+    },
+    "symptoms": {
+      "schema": { "$ref": "#/entities/Symptom" },
+      "description": "Metadata of common disease symptoms"
+    },
+    "queue": {
+      "schema": { "$ref": "#/entities/Queue" },
+      "description": "Virtual queues list with live estimates"
+    },
+    "followups": {
+      "schema": { "$ref": "#/entities/FollowUp" },
+      "description": "Patient scheduled follow-ups"
+    },
+    "notifications": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Patient communication alerts and badges logs"
+    }
+  }
+}

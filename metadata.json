@@ -1,0 +1,6 @@
+{
+  "name": "HUMS eBook",
+  "description": "Virtual queue and clinic appointment booking system for Hospital Universiti Malaysia Sabah (HUMS) patients in Malaysia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

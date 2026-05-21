@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Atkinson Hyperlegible Next", ui-sans-serif, system-ui, sans-serif;
+  
+  /* Primary Clinical Palette colors */
+  --color-primary: #3b82f6; /* Healthcare Blue */
+  --color-primary-dark: #1d4ed8;
+  --color-success: #10b981; /* Success Green */
+  --color-navy: #0f172a; /* Deep Charcoal */
+}
+
+body {
+  font-family: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  background-color: #f8fafc;
+  color: #0f172a;
+  -webkit-tap-highlight-color: transparent;
+}
